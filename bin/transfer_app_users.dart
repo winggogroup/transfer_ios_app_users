@@ -1,26 +1,9 @@
-import 'dart:io';
+// ignore_for_file: constant_identifier_names, non_constant_identifier_names
 
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:transfer_app_users/transfer_app_users.dart';
 
-void main(List<String> arguments) {
-  final jwt = JWT(
-    {
-      "iss": "74M3NX9948",
-      "iat": 1703322052,
-      "exp": 1719099052,
-      "aud": "https://appleid.apple.com",
-      "sub": "com.jctop.WingGos"
-    },
-    header: {
-      "alg": "ES256",
-      "kid": "LM3K7H9U62",
-    },
-  );
-
-  final pem = File('./assets/AuthKey_LM3K7H9U62.p8').readAsStringSync();
-  final key = ECPrivateKey(pem);
-
-  final token = jwt.sign(key, algorithm: JWTAlgorithm.ES256);
-
-  print('Signed token: $token\n');
+void main(List<String> arguments) async {
+  const old_user_id = '000086.35a49c9d30894c16b5dd1cc5402afb16.1229';
+  final transfer_user_ids = await createTransferId([old_user_id]);
+  print(transfer_user_ids);
 }
