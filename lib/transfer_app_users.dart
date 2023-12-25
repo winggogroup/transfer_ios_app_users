@@ -52,21 +52,32 @@ Future<List<String>> createTransferId(List<String> old_user_ids) async {
 
   List<String> transfer_user_ids = [];
   for (final old_user_id in old_user_ids) {
-    final transferIdentifierRes = await dio.post(
-      '/auth/usermigrationinfo',
-      data: {
-        'sub': old_user_id,
-        'target': 'MS2AV673HV',
-        'client_id': client_id,
-        'client_secret': client_secret,
-      },
-      options: Options(headers: {
-        ...dio.options.headers,
-        'Authorization': 'Bearer $access_token',
-      }),
-    );
+    if (old_user_id.contains("cancel") || old_user_id.contains('"')) {
+      transfer_user_ids.add("");
 
-    transfer_user_ids.add(transferIdentifierRes.data['transfer_sub']);
+      continue;
+    } else {
+      try {
+        final transferIdentifierRes = await dio.post(
+          '/auth/usermigrationinfo',
+          data: {
+            'sub': old_user_id,
+            'target': 'MS2AV673HV',
+            'client_id': client_id,
+            'client_secret': client_secret,
+          },
+          options: Options(headers: {
+            ...dio.options.headers,
+            'Authorization': 'Bearer $access_token',
+          }),
+        );
+        print(transferIdentifierRes);
+        transfer_user_ids.add(transferIdentifierRes.data['transfer_sub']);
+      } catch (_) {
+        print('error user id is $old_user_id');
+        transfer_user_ids.add("");
+      }
+    }
   }
 
   return transfer_user_ids;
