@@ -25,13 +25,13 @@ void main(List<String> arguments) async {
 
   // print(old_apple_user_ids);
   // old_apple_user_ids = ['000086.35a49c9d30894c16b5dd1cc5402afb16.1229'];
-  final transfer_user_ids = await createTransferId(old_apple_user_ids);
-  print('${transfer_user_ids.length} vs ${old_apple_user_ids.length}');
+  final new_user_ids = await createUserId(old_apple_user_ids);
+  print('${new_user_ids.length} vs ${old_apple_user_ids.length}');
 
   rows[0].add('new_apple_user_id');
   for (int i = 1; i < rows.length; i++) {
     final row = rows[i];
-    row.add(transfer_user_ids[i - 1]);
+    row.add(new_user_ids[i - 1]);
   }
 
   final newCsvFile = const ListToCsvConverter().convert(rows);

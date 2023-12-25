@@ -29,10 +29,36 @@ String createJWTToken(String client_id) {
   return token;
 }
 
+/// https://developer.apple.com/documentation/accountorganizationaldatasharing/creating-a-client-secret
+String createJWTToken2(String client_id) {
+  final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  final jwt = JWT(
+    {
+      "iss": "MS2AV673HV",
+      "iat": now,
+      "exp": now + 15777000,
+      "aud": "https://appleid.apple.com",
+      "sub": client_id,
+    },
+    header: {
+      "alg": "ES256",
+      "kid": "723WRK6TM8",
+    },
+  );
+
+  final pem = File('./assets/AuthKey_723WRK6TM8.p8').readAsStringSync();
+  final key = ECPrivateKey(pem);
+
+  final token = jwt.sign(key, algorithm: JWTAlgorithm.ES256);
+  return token;
+}
+
 /// https://developer.apple.com/documentation/sign_in_with_apple/transferring_your_apps_and_users_to_another_team
-Future<List<String>> createTransferId(List<String> old_user_ids) async {
+/// https://developer.apple.com/documentation/sign_in_with_apple/bringing_new_apps_and_users_into_your_team
+Future<List<String>> createUserId(List<String> old_user_ids) async {
   const client_id = 'com.jctop.WingGos';
   final client_secret = createJWTToken(client_id);
+  final client_secret2 = createJWTToken2(client_id);
 
   final dio = Dio(BaseOptions(baseUrl: 'https://appleid.apple.com'));
   dio.options.contentType = Headers.formUrlEncodedContentType;
@@ -49,6 +75,19 @@ Future<List<String>> createTransferId(List<String> old_user_ids) async {
 
   final access_token = (accessTokenRes.data as Map)['access_token'];
   print('User access token is $access_token');
+
+  final accessTokenRes2 = await dio.post(
+    '/auth/token',
+    data: {
+      'grant_type': 'client_credentials',
+      'scope': 'user.migration',
+      'client_id': client_id,
+      'client_secret': client_secret,
+    },
+  );
+
+  final access_token2 = (accessTokenRes2.data as Map)['access_token'];
+  print('User access token is $access_token2');
 
   List<String> transfer_user_ids = [];
   for (final old_user_id in old_user_ids) {
@@ -72,7 +111,21 @@ Future<List<String>> createTransferId(List<String> old_user_ids) async {
           }),
         );
         print(transferIdentifierRes);
-        transfer_user_ids.add(transferIdentifierRes.data['transfer_sub']);
+
+        final exchangeIdentifierRes = await dio.post(
+          '/auth/usermigrationinfo',
+          data: {
+            'transfer_sub': transferIdentifierRes.data['transfer_sub'],
+            'client_id': client_id,
+            'client_secret': client_secret2,
+          },
+          options: Options(headers: {
+            ...dio.options.headers,
+            'Authorization': 'Bearer $access_token2',
+          }),
+        );
+        print(exchangeIdentifierRes);
+        transfer_user_ids.add(exchangeIdentifierRes.data['sub']);
       } catch (_) {
         print('error user id is $old_user_id');
         transfer_user_ids.add("");
