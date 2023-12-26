@@ -6,7 +6,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:dio/dio.dart';
 
 /// https://developer.apple.com/documentation/accountorganizationaldatasharing/creating-a-client-secret
-String createJWTToken(String client_id) {
+String createTransferringClientJWTToken(String client_id) {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final jwt = JWT(
     {
@@ -30,7 +30,7 @@ String createJWTToken(String client_id) {
 }
 
 /// https://developer.apple.com/documentation/accountorganizationaldatasharing/creating-a-client-secret
-String createJWTToken2(String client_id) {
+String createRecipientClientJWTToken(String client_id) {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final jwt = JWT(
     {
@@ -55,10 +55,11 @@ String createJWTToken2(String client_id) {
 
 /// https://developer.apple.com/documentation/sign_in_with_apple/transferring_your_apps_and_users_to_another_team
 /// https://developer.apple.com/documentation/sign_in_with_apple/bringing_new_apps_and_users_into_your_team
-Future<List<String>> createUserId(List<String> old_user_ids) async {
+Future<List<String>> createUserIds(List<String> old_user_ids) async {
   const client_id = 'com.jctop.WingGos';
-  final client_secret = createJWTToken(client_id);
-  final client_secret2 = createJWTToken2(client_id);
+  final transferring_client_secret =
+      createTransferringClientJWTToken(client_id);
+  final recipient_client_secret = createRecipientClientJWTToken(client_id);
 
   final dio = Dio(BaseOptions(baseUrl: 'https://appleid.apple.com'));
   dio.options.contentType = Headers.formUrlEncodedContentType;
@@ -69,7 +70,7 @@ Future<List<String>> createUserId(List<String> old_user_ids) async {
       'grant_type': 'client_credentials',
       'scope': 'user.migration',
       'client_id': client_id,
-      'client_secret': client_secret,
+      'client_secret': transferring_client_secret,
     },
   );
 
@@ -82,7 +83,7 @@ Future<List<String>> createUserId(List<String> old_user_ids) async {
       'grant_type': 'client_credentials',
       'scope': 'user.migration',
       'client_id': client_id,
-      'client_secret': client_secret,
+      'client_secret': transferring_client_secret,
     },
   );
 
@@ -103,7 +104,7 @@ Future<List<String>> createUserId(List<String> old_user_ids) async {
             'sub': old_user_id,
             'target': 'MS2AV673HV',
             'client_id': client_id,
-            'client_secret': client_secret,
+            'client_secret': transferring_client_secret,
           },
           options: Options(headers: {
             ...dio.options.headers,
@@ -117,7 +118,7 @@ Future<List<String>> createUserId(List<String> old_user_ids) async {
           data: {
             'transfer_sub': transferIdentifierRes.data['transfer_sub'],
             'client_id': client_id,
-            'client_secret': client_secret2,
+            'client_secret': recipient_client_secret,
           },
           options: Options(headers: {
             ...dio.options.headers,
